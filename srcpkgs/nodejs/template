@@ -1,6 +1,6 @@
 # Template file for 'nodejs'
 pkgname=nodejs
-version=20.16.0
+version=22.14.0
 revision=1
 hostmakedepends="which pkg-config python3-setuptools"
 _make_depends="zlib-devel \
@@ -18,7 +18,7 @@ license="MIT"
 homepage="https://nodejs.org/"
 changelog="https://raw.githubusercontent.com/nodejs/node/main/doc/changelogs/CHANGELOG_V${version%%.*}.md"
 distfiles="https://nodejs.org/dist/v${version}/node-v${version}.tar.xz"
-checksum=cd6c8fc3ff2606aadbc7155db6f7e77247d2d0065ac18e2f7f049095584b8b46
+checksum=c609946bf793b55c7954c26582760808d54c16185d79cb2fb88065e52de21914
 python_version=3
 
 build_options="ssl libuv icu nghttp2 cares brotli"
@@ -99,6 +99,9 @@ do_build() {
 }
 
 do_check() {
+	# Update ICU data to match current version
+	/builddir/${pkgname}-${version}/out/Release/node tools/icu/update-test-data.mjs
+
 	local CI_SKIP_TESTS="test-crypto-dh.js,\
 test-child-process-uid-gid.js,\
 test-cluster-primary-error.js,\
@@ -139,6 +142,9 @@ test-tls-sni-server-client.js,\
 
 	# https://github.com/nodejs/node/issues/50741
 	CI_SKIP_TESTS+=",test-dns-resolveany.js,test-dns-resolveany-bad-ancount.js"
+
+	# Build is not executed in a tty
+	CI_SKIP_TESTS+=",test-util-styletext.js"
 
 	if [ "$XBPS_TARGET_MACHINE" = i686 ]; then
 		# https://github.com/nodejs/node/issues/45906

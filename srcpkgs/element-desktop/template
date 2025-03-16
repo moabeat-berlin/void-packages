@@ -1,12 +1,12 @@
 # Template file for 'element-desktop'
 pkgname=element-desktop
-version=1.11.83
+version=1.11.94
 revision=1
 create_wrksrc=yes
 conf_files="/etc/${pkgname}/config.json"
 hostmakedepends="git yarn nodejs rust cargo python3 curl
  sqlcipher-devel libnotify-devel pkg-config
- app-builder jq moreutils"
+ app-builder jq moreutils python3-distutils-extra"
 makedepends="libsecret-devel"
 depends="c-ares ffmpeg gtk+3 http-parser libevent
  libxslt minizip nss re2 snappy sqlcipher electron24"
@@ -17,8 +17,8 @@ homepage="https://element.io"
 changelog="https://raw.githubusercontent.com/vector-im/element-desktop/develop/CHANGELOG.md"
 distfiles="https://github.com/vector-im/element-desktop/archive/v${version}.tar.gz>element-desktop-v${version}.tar.gz
  https://github.com/vector-im/element-web/archive/v${version}.tar.gz>element-web-v${version}.tar.gz"
-checksum="be20c6cdf5b77bd9ee49bc202611a3e13deed31522e7cf956635ae13112008de
- 50cd755c8fb22163f089eeb89b2fc23a7c28d65522565a1e9b0a791aa8829952"
+checksum="c6391c3c766facc63f1a210992218a5157ab22107a79607678beb0c6becfa101
+ a69643b214e8138999b8f55ca59f47edab3638fa05e5f43d297e7f153e2948d2"
 
 export USE_SYSTEM_APP_BUILDER=true
 
