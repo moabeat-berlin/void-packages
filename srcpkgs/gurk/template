@@ -1,0 +1,28 @@
+# Template file for 'gurk'
+pkgname=gurk
+version=0.7.1
+revision=1
+build_style=cargo
+hostmakedepends="clang20 protobuf perl pkg-config"
+makedepends="openssl-devel sqlite-devel sqlcipher-devel"
+depends="openssl sqlite sqlcipher"
+short_desc="Signal Messenger client for terminal"
+# make_build_args="-vv"
+maintainer="Moabeat <moabeat@berlin.de>"
+license="AGPL-3.0-only"
+homepage="https://github.com/boxdot/gurk-rs"
+changelog="https://raw.githubusercontent.com/boxdot/gurk-rs/refs/heads/main/CHANGELOG.md"
+distfiles="https://github.com/boxdot/gurk-rs/archive/refs/tags/v${version}.tar.gz"
+checksum=e86e6e0938439ac84af5b1f08a99810f0e632c60c63ba58e566181ffd2578874
+
+pre_build() {
+	unset OPENSSL_NO_VENDOR
+}
+
+pre_install() {
+	unset OPENSSL_NO_VENDOR
+}
+
+post_install() {
+	vlicense LICENSE-AGPL-3.0
+}
