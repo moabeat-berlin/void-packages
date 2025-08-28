@@ -2,7 +2,6 @@
 pkgname=gurk
 version=0.7.1
 revision=1
-archs="x86_64"
 build_style=cargo
 hostmakedepends="clang protobuf perl"
 depends="openssl sqlite"
