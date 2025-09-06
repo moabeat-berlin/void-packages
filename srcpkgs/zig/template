@@ -1,6 +1,6 @@
 # Template file for 'zig'
 pkgname=zig
-version=0.13.0
+version=0.15.1
 revision=1
 archs="x86_64* aarch64*"
 build_style=cmake
@@ -14,7 +14,7 @@ maintainer="Orphaned <orphan@voidlinux.org>"
 license="MIT"
 homepage="https://ziglang.org"
 distfiles="https://ziglang.org/download/${version}/zig-${version}.tar.xz"
-checksum=06c73596beeccb71cc073805bdb9c0e05764128f16478fa53bf17dfabc1d4318
+checksum=816c0303ab313f59766ce2097658c9fff7fafd1504f61f80f9507cd11652865f
 nopie=yes
 nocross=yes
 
