@@ -1,0 +1,18 @@
+# Template file for 'ly'
+pkgname=ly
+version=1.1.2
+revision=1
+build_style="zig-build"
+configure_args="-Dinit_system=runit"
+makedepends="pam-devel libxcb-devel"
+short_desc="Fancy TUI display manager"
+maintainer="Moabeat <moabeat@berlin.de>"
+license="WTFPL"
+homepage="https://codeberg.org/AnErrupTion/ly"
+distfiles="${homepage}/archive/v${version}.tar.gz>${pkgname}-${version}.tar.gz"
+checksum="8f491d09045bb680680b553556f9db7af89c6644a257352839f98c4e98028fd0"
+nopie_files="/usr/bin/ly"
+
+post_install() {
+	vlicense license.md
+}
