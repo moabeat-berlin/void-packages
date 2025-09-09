@@ -1,0 +1,19 @@
+# Template file for 'calcure'
+pkgname=calcure
+version=3.2.1
+revision=1
+build_style=python3-module
+hostmakedepends="python3-setuptools"
+makedepends="python3-devel readline-devel"
+depends="python3-icalendar"
+short_desc="Modern TUI calendar and task manager with customizable interface."
+maintainer="Orphaned <orphan@voidlinux.org>"
+license="MIT"
+homepage="https://github.com/anufrievroman/calcure"
+distfiles="https://github.com/anufrievroman/${pkgname}/archive/${version}.tar.gz"
+checksum=3ed3ab4d0236952733abfc4ccc340581e2b8444119417ebf763b0b7be4f984eb
+
+pre_install() {
+  mv ${wrksrc}/calcure.1.gz ${wrksrc}/calcure.1
+  sed -i 's/calcure.1.gz/calcure.1/g' ${wrksrc}/setup.py
+}
