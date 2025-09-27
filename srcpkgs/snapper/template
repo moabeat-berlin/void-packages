@@ -1,6 +1,6 @@
 # Template file for 'snapper'
 pkgname=snapper
-version=0.12.2
+version=0.13.0
 revision=3
 build_style=gnu-configure
 configure_args="--disable-zypp --disable-systemd --with-conf=/etc/conf.d"
@@ -12,13 +12,14 @@ makedepends="acl-devel boost-devel-minimal libboost_thread
  dbus-devel e2fsprogs-devel libbtrfs-devel
  libmount-devel libxml2-devel pam-devel ncurses-devel ncurses-libtinfo-devel
  json-c-devel"
+checkdepends="libboost_unit_test_framework"
 depends="dbus"
 short_desc="Tool for Linux filesystem snapshot management"
 maintainer="Orphaned <orphan@voidlinux.org>"
 license="GPL-2.0-only"
 homepage="http://snapper.io"
 distfiles="https://github.com/openSUSE/snapper/archive/v${version}.tar.gz"
-checksum=0b902c9e6e4917ae035b60d20166b176e417718b9a853534fff057b14a2cbff8
+checksum=b660b34ea175443404fc109cf2a1d20f699f0d62358d44807079600962c413ed
 lib32disabled=yes
 
 if [ "$XBPS_TARGET_LIBC" = musl ]
