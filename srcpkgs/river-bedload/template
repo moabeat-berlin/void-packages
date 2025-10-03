@@ -1,6 +1,6 @@
 # Template file for 'river-bedload'
 pkgname=river-bedload
-version=0.1.1
+version=0.2.0
 revision=1
 build_style=zig-build
 configure_args="-Doptimize=ReleaseSafe"
@@ -10,6 +10,6 @@ short_desc="Display information about river Wayland compositor in json in the ST
 maintainer="Yushi <github@yushi.one>"
 license="GPL-3.0-or-later"
 homepage="https://git.sr.ht/~novakane/river-bedload"
-distfiles="https://git.sr.ht/~novakane/river-bedload/refs/download/v${version}/river-bedload-v${version}.tar.gz"
-checksum=f0ecde0b7d393207eb6c8e7d375ca967388accc16b0f741c280f0844c0e63d82
+distfiles="https://git.sr.ht/~novakane/river-bedload/archive/v${version}.tar.gz"
+checksum=4de5fe73ab2573f1e01c8de8997d373c23cafa91960ef8cdb6581c004c87abff
 nopie=yes
