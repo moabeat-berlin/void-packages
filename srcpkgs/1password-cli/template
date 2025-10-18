@@ -1,0 +1,15 @@
+# Template file for '1password-cli'
+pkgname=1password-cli
+version=2.32.0
+revision=1
+archs="x86_64"
+short_desc="Command line interface for 1Password"
+maintainer="Moabeat <moabeat@berlin.de>"
+license="unknown"
+homepage="https://1password.com/"
+distfiles="https://cache.agilebits.com/dist/1P/op2/pkg/v${version}/op_linux_amd64_v${version}.zip"
+checksum=68e3141b11ad38ba5004fb40d71371b710c0bbf94733f0df9180768336f90097
+
+do_install() {
+	vbin op
+}
