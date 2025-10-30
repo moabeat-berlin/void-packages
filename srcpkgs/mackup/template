@@ -1,0 +1,16 @@
+# Template file for 'mackup'
+pkgname=mackup
+version=0.9.4
+revision=1
+build_style=python3-pep517
+hostmakedepends="hatchling"
+makedepends="python3-docopt python3-wheel"
+depends="python3 python3-docopt procps-ng"
+checkdepends="procps-ng python3-pytest"
+short_desc="Backup and keep your application settings in sync"
+maintainer="Moabeat <moabeat@berlin.de>"
+license="GPL-3.0-only"
+homepage="https://github.com/lra/mackup"
+changelog="https://github.com/lra/mackup/releases"
+distfiles="https://github.com/lra/mackup/archive/refs/tags/${version}.tar.gz"
+checksum=5a35f3eb8a71919f54ee2caca5a5d3c1bd373485baa37acd2715b370cae43565
