@@ -1,6 +1,6 @@
 # Template file for 'mackup'
 pkgname=mackup
-version=0.9.4
+version=0.10.1
 revision=1
 build_style=python3-pep517
 hostmakedepends="hatchling"
@@ -13,4 +13,4 @@ license="GPL-3.0-only"
 homepage="https://github.com/lra/mackup"
 changelog="https://github.com/lra/mackup/releases"
 distfiles="https://github.com/lra/mackup/archive/refs/tags/${version}.tar.gz"
-checksum=5a35f3eb8a71919f54ee2caca5a5d3c1bd373485baa37acd2715b370cae43565
+checksum=1835b47dc5d8b428143d9a8dba36825a93c5142f7ad56d40d750c19b56a08d1f
