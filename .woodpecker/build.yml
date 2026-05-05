@@ -1,0 +1,196 @@
+# Woodpecker CI pipeline for building custom Void Linux packages.
+#
+# This repo is a fork of void-packages. The pipeline detects which
+# templates changed compared to master and builds only those packages.
+#
+# Secrets required (set in Woodpecker → repository → secrets):
+#   repo_sign_key  — private signing key (xbps-rindex --genkey)
+#   deploy_ssh_key — SSH private key for rsync publishing
+
+# Matrix: one workflow run per architecture/libc combination.
+# ${XBPS_ARCH} and ${IMAGE} are interpolated before YAML is parsed.
+matrix:
+  include:
+    - XBPS_ARCH: x86_64
+      IMAGE: ghcr.io/void-linux/void-glibc:latest
+    - XBPS_ARCH: x86_64-musl
+      IMAGE: ghcr.io/void-linux/void-musl:latest
+#    - XBPS_ARCH: aarch64
+#      IMAGE: ghcr.io/void-linux/void-glibc:latest   # cross-compile from x86_64
+
+when:
+  - event: push
+    branch: build
+  - event: manual
+
+steps:
+  # ── 1. Detect changed packages ────────────────────────────────────────────
+  - name: detect-changes
+    image: alpine:latest
+    commands:
+      - apk add --no-cache git
+      - |
+        git fetch origin master --depth=1
+        git diff --name-only origin/master HEAD \
+          | grep '^srcpkgs/' \
+          | awk -F/ '{print $2}' \
+          | sort -u > changed_pkgs.txt
+        if [ ! -s changed_pkgs.txt ]; then
+          echo "No package changes detected between master and build branch."
+          exit 0
+        fi
+      - echo "==> Packages queued for ${XBPS_ARCH}:"
+      - cat changed_pkgs.txt
+
+  # ── 2. Build packages ──────────────────────────────────────────────────────
+  - name: build
+    image: ${IMAGE}
+    privileged: true
+    environment:
+      XBPS_ARCH: ${XBPS_ARCH}
+      XBPS_TARGET_ARCH: ${XBPS_ARCH}
+      # URL where previously built packages are served (must match publish destination)
+      DEPLOY_REPO_URL: https://voidrepo.nordstadt.club
+      REPO_SIGN_KEY:
+        from_secret: repo_sign_key
+    commands:
+      # Install build toolchain
+      - xbps-install -Syu --yes
+      - xbps-install -y --yes base-devel xtools shadow util-linux wget tree
+
+      # Create unprivileged build user (xbps-src refuses to run as root)
+      - useradd -m -s /bin/sh builder
+      - chown -R builder:builder "$CI_WORKSPACE"
+
+      # Bootstrap xbps-src
+      - su builder -c "./xbps-src binary-bootstrap"
+
+      # Register the deploy repo so dependencies from earlier builds can be installed
+      - |
+        mkdir -p masterdir/etc/xbps.d
+        echo "repository=$DEPLOY_REPO_URL/${XBPS_ARCH}" \
+          > masterdir/etc/xbps.d/01-custom-repo.conf
+
+      # Download existing packages from the remote repo so xbps-src -E can
+      # detect already-built versions and we can produce a merged repo index
+      - |
+        BINPKGS="hostdir/binpkgs/${CI_COMMIT_BRANCH}"
+        REPO_URL="$DEPLOY_REPO_URL/${XBPS_ARCH}"
+        mkdir -p "$BINPKGS"
+        wget -q "$REPO_URL/${XBPS_ARCH}-repodata" -P "$BINPKGS/"
+        echo "==> Downloading existing packages from $REPO_URL ..."
+        xbps-query --repository $REPO_URL -Mi -s '' 2>/dev/null \
+          | awk '{print $2}' \
+          | while read pkgver; do
+              wget -q "$REPO_URL/$pkgver.${XBPS_ARCH}.xbps" -P "$BINPKGS/" || true
+            done
+        echo "  $(find "$BINPKGS" -name '*.xbps' 2>/dev/null | wc -l) existing packages downloaded."
+      
+      # Build each changed package; -E skips if same version already exists
+      # in local binpkgs. Collect failures but continue building.
+      - |
+        FAILED=""
+        while IFS= read -r pkg; do
+          [ -z "$pkg" ] && continue
+
+          # Check if the package supports the current architecture
+          archs=$(grep -E '^archs=' "srcpkgs/$pkg/template" 2>/dev/null \
+            | head -1 | sed 's/archs=//' | tr -d '"' | tr -d "'")
+          if [ -n "$archs" ]; then
+            skip=false
+            case "$archs" in
+              ~*)
+                # Negation list: skip if our arch is explicitly excluded
+                for arch in $archs; do
+                  pattern="${arch#\~}"
+                  case "${XBPS_ARCH}" in
+                    $pattern) skip=true; break ;;
+                  esac
+                done
+                ;;
+              *)
+                # Positive list: skip if our arch is not listed
+                skip=true
+                for arch in $archs; do
+                  case "${XBPS_ARCH}" in
+                    $arch) skip=false; break ;;
+                  esac
+                done
+                ;;
+            esac
+            if [ "$skip" = "true" ]; then
+              echo "==> SKIP: $pkg (not available for ${XBPS_ARCH})"
+              continue
+            fi
+          fi
+
+          echo "==> Building $pkg for ${XBPS_ARCH} ..."
+          if su builder -c "./xbps-src -E pkg $pkg"; then
+            echo "==> OK: $pkg"
+          else
+            echo "==> FAILED: $pkg"
+            FAILED="$FAILED $pkg"
+          fi
+        done < changed_pkgs.txt
+        if [ -n "$FAILED" ]; then
+          echo "Build failures:$FAILED"
+          echo "$FAILED" > /tmp/build_failures
+        fi
+
+      # Index and sign the repository (existing + newly built packages)
+      - |
+        BINPKGS="hostdir/binpkgs/${CI_COMMIT_BRANCH}"
+        echo "$REPO_SIGN_KEY" > /tmp/repo.pem
+        chmod 600 /tmp/repo.pem
+        find "$BINPKGS" -name '*.xbps' | xargs -r xbps-rindex -a
+        xbps-rindex --sign \
+            --signedby "Moabeat <moabeat@berlin.de>" \
+            --privkey /tmp/repo.pem \
+            "$BINPKGS"
+        /usr/bin/xbps-rindex --sign-pkg \
+            --signedby "Moabeat <moabeat@berlin.de>" \
+            --privkey /tmp/repo.pem \
+            $BINPKGS/*.xbps
+        rm -f /tmp/repo.pem
+
+      # Copy packages into the workspace for the publish step
+      - cp -r "hostdir/binpkgs/${CI_COMMIT_BRANCH}" "$CI_WORKSPACE/binpkgs-${XBPS_ARCH}"
+
+      # Exit with failure if any builds failed (after indexing/signing/copying)
+      - |
+        if [ -f /tmp/build_failures ]; then
+          echo "Some packages failed to build:$(cat /tmp/build_failures)"
+          exit 1
+        fi
+
+
+  # ── 3. Publish packages ────────────────────────────────────────────────────
+  - name: publish
+    image: alpine:latest
+    environment:
+      DEPLOY_SSH_KEY:
+        from_secret: deploy_ssh_key
+    commands:
+      - apk add --no-cache rsync openssh-client
+      - |
+        echo "$DEPLOY_SSH_KEY" > /tmp/deploy_key
+        chmod 600 /tmp/deploy_key
+        rsync -avz \
+          -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" \
+          "binpkgs-${XBPS_ARCH}/" \
+          "repoupload@sheik.lnb:/srv/files/voidrepo/${XBPS_ARCH}/"
+        rm -f /tmp/deploy_key
+    when:
+      - status: [success, failure]
+
+  # ── 4. Report built packages (always runs) ─────────────────────────────────
+  - name: report
+    image: alpine:latest
+    commands:
+      - |
+        echo "==> Built packages for ${XBPS_ARCH}:"
+        find "binpkgs-${XBPS_ARCH}" -name '*.xbps' 2>/dev/null \
+          | sort \
+          || echo "  (none)"
+    when:
+      - status: [success, failure]
