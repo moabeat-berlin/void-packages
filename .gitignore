@@ -10,6 +10,7 @@
 !/.github
 !/.gitignore
 !/.mailmap
+!/.woodpecker
 !/CONTRIBUTING.md
 !/COPYING
 !/Manual.md
